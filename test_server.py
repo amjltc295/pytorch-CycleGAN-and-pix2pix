@@ -38,10 +38,9 @@ class CycleGANWorker:
         self.model.setup(opt)
         logger.info("Initialization done")
 
-    def infer(self, frameEncoded):
+    def infer(self, img):
 
         start_time = time.time()
-        img = Image.open(io.BytesIO(frameEncoded))
         aspect_ratio = img.size[0] / img.size[1]
         img = self.transform(img)
         img = img.unsqueeze(0)
@@ -88,30 +87,29 @@ def hi():
 @app.route('/cyclegan', methods=['POST'])
 def cyclegan():
     try:
-        image_string = json.loads(request.data)['image']
+        image_file = request.files['pic']
     except Exception as err:
         logger.error(str(err), exc_info=True)
         raise InvalidUsage(
-            f"{err}: request.data {request.data} "
-            "could not be loaded by json.loads"
+            f"{err}: request {request} "
+            "has no file['pic']"
         )
-    if image_string is None:
+    if image_file is None:
         raise InvalidUsage('There is no iamge')
     try:
-        image_data = image_string.split('base64,')[1]
-        frameEncoded = base64.decodebytes(bytes(image_data, "utf-8"))
+        image = Image.open(image_file)
     except Exception as err:
         logger.error(str(err), exc_info=True)
         raise InvalidUsage(
-            f"{err}: request.data {request.data} "
-            "could not be loaded by json.loads"
+            f"{err}: request.files['pic'] {request.files['pic']} "
+            "could not be read by PIL"
         )
     try:
-        result = cycle_gan_worker.infer(frameEncoded)
+        result = cycle_gan_worker.infer(image)
     except Exception as err:
         logger.error(str(err), exc_info=True)
         raise InvalidUsage(
-            f"{err}: request.data {request.data} "
+            f"{err}: request {request} "
             "The server encounters some error to process this image",
             status_code=500
         )
