@@ -1,8 +1,11 @@
 import os.path
+import random
+
+from PIL import Image
+import torch
+
 from data.base_dataset import BaseDataset, get_transform
 from data.image_folder import make_video_dataset
-from PIL import Image
-import random
 
 
 class VideoDataset(BaseDataset):
@@ -59,7 +62,7 @@ class VideoDataset(BaseDataset):
             A_paths.append(A_dir[i])
             B_paths.append(B_dir[i])
 
-        return {'A': A_images, 'B': B_images,
+        return {'A': torch.stack(A_images), 'B': torch.stack(B_images),
                 'A_paths': A_paths, 'B_paths': B_paths}
 
     def __len__(self):
