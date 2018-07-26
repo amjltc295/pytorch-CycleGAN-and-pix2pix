@@ -81,6 +81,8 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_dropo
         netG = UnetGenerator(input_nc, output_nc, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     elif which_model_netG == 'unet_256':
         netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
+    elif which_model_netG == '3D':
+        netG = Resnet3DGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     return init_net(netG, init_type, init_gain, gpu_ids)
@@ -134,6 +136,59 @@ class GANLoss(nn.Module):
         return self.loss(input, target_tensor)
 
 
+# Defines the 3D generator that consists of Resnet blocks between a few
+# downsampling/upsampling operations.
+# From Dina Bashkirova's "Unsupervised Video-to-Video Translation"
+# See https://arxiv.org/pdf/1806.03698v1.pdf
+class Resnet3DGenerator(nn.Module):
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm3d, use_dropout=False, n_blocks=6, padding_type='reflect'):
+        assert(n_blocks >= 0)
+        super().__init__()
+        self.input_nc = input_nc
+        self.output_nc = output_nc
+        self.ngf = ngf
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm3d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm3d
+
+        model = [nn.ReflectionPad3d(3),
+                 nn.Conv3d(input_nc, ngf, kernel_size=7, padding=0,
+                           bias=use_bias),
+                 norm_layer(ngf),
+                 nn.ReLU(True)]
+
+        n_downsampling = 2
+        for i in range(n_downsampling):
+            mult = 2**i
+            model += [nn.Conv3d(ngf * mult, ngf * mult * 2, kernel_size=3,
+                                stride=2, padding=1, bias=use_bias),
+                      norm_layer(ngf * mult * 2),
+                      nn.ReLU(True)]
+
+        mult = 2**n_downsampling
+        for i in range(n_blocks):
+            model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
+
+        for i in range(n_downsampling):
+            mult = 2**(n_downsampling - i)
+            model += [nn.ConvTranspose3d(ngf * mult, int(ngf * mult / 2),
+                                         kernel_size=3, stride=2,
+                                         padding=1, output_padding=1,
+                                         bias=use_bias),
+                      norm_layer(int(ngf * mult / 2)),
+                      nn.ReLU(True)]
+        model += [nn.ReflectionPad3d(3)]
+        model += [nn.Conv3d(ngf, output_nc, kernel_size=7, padding=0)]
+        model += [nn.Tanh()]
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self, input):
+        return self.model(input)
+
+
+# Define a resnet block
 # Defines the generator that consists of Resnet blocks between a few
 # downsampling/upsampling operations.
 # Code and idea originally from Justin Johnson's architecture.
