@@ -34,6 +34,24 @@ def make_dataset(dir):
     return images
 
 
+def make_video_dataset(root_dir):
+    videos = []
+    assert os.path.isdir(root_dir), '%s is not a valid directory' % root_dir
+
+    for root, _, fnames in sorted(os.walk(root_dir)):
+        if root == root_dir:
+            continue
+        images = []
+        fnames.sort()
+        for fname in fnames:
+            if is_image_file(fname):
+                path = os.path.join(root, fname)
+                images.append(path)
+        videos.append(images)
+
+    return videos
+
+
 def default_loader(path):
     return Image.open(path).convert('RGB')
 
