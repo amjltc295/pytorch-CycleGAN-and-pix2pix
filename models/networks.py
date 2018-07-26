@@ -1,8 +1,11 @@
+import functools
+
 import torch
 import torch.nn as nn
 from torch.nn import init
-import functools
 from torch.optim import lr_scheduler
+
+from .custom_layers import ReflectionPad3d
 
 ###############################################################################
 # Helper Functions
@@ -14,6 +17,8 @@ def get_norm_layer(norm_type='instance'):
         norm_layer = functools.partial(nn.BatchNorm2d, affine=True)
     elif norm_type == 'instance':
         norm_layer = functools.partial(nn.InstanceNorm2d, affine=False, track_running_stats=True)
+    elif norm_type == 'instance3D':
+        norm_layer = functools.partial(nn.InstanceNorm3d, affine=False, track_running_stats=True)
     elif norm_type == 'none':
         norm_layer = None
     else:
@@ -99,6 +104,8 @@ def define_D(input_nc, ndf, which_model_netD,
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     elif which_model_netD == 'pixel':
         netD = PixelDiscriminator(input_nc, ndf, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
+    elif which_model_netD == '3D':
+        netD = NLayer3DDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' %
                                   which_model_netD)
@@ -152,7 +159,7 @@ class Resnet3DGenerator(nn.Module):
         else:
             use_bias = norm_layer == nn.InstanceNorm3d
 
-        model = [nn.ReflectionPad3d(3),
+        model = [ReflectionPad3d(3),
                  nn.Conv3d(input_nc, ngf, kernel_size=7, padding=0,
                            bias=use_bias),
                  norm_layer(ngf),
@@ -178,7 +185,7 @@ class Resnet3DGenerator(nn.Module):
                                          bias=use_bias),
                       norm_layer(int(ngf * mult / 2)),
                       nn.ReLU(True)]
-        model += [nn.ReflectionPad3d(3)]
+        model += [ReflectionPad3d(3)]
         model += [nn.Conv3d(ngf, output_nc, kernel_size=7, padding=0)]
         model += [nn.Tanh()]
 
