@@ -117,9 +117,9 @@ class CycleGAN3DModel(BaseModel):
         self.real_A = []
         self.real_B = []
         AtoB = self.opt.which_direction == 'AtoB'
-        self.real_A = input['A' if AtoB else 'B'].to(self.device)
-        self.real_B = input['B' if AtoB else 'A'].to(self.device)
-        self.image_paths = input['A_paths' if AtoB else 'B_paths']
+        self.real_A = input_images['A' if AtoB else 'B'].to(self.device)
+        self.real_B = input_images['B' if AtoB else 'A'].to(self.device)
+        self.image_paths = input_images['A_paths' if AtoB else 'B_paths']
 
     def forward(self):
         self.fake_B = self.netG_A(self.real_A)
