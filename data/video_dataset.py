@@ -4,7 +4,7 @@ import random
 from PIL import Image
 import torch
 
-from data.base_dataset import BaseDataset, get_transform
+from data.base_dataset import BaseDataset, get_video_transform
 from data.image_folder import make_video_dataset
 
 
@@ -24,7 +24,7 @@ class VideoDataset(BaseDataset):
 
         self.A_size = len(self.A_video_dirs)
         self.B_size = len(self.B_video_dirs)
-        self.transform = get_transform(opt)
+        self.transform = get_video_transform(opt)
 
     def __getitem__(self, index):
         A_dir = self.A_video_dirs[index % self.A_size]
@@ -42,8 +42,16 @@ class VideoDataset(BaseDataset):
         for i in range(self.opt.video_length):
             A_img = Image.open(A_dir[i]).convert('RGB')
             B_img = Image.open(B_dir[i]).convert('RGB')
-            A = self.transform(A_img)
-            B = self.transform(B_img)
+            A_images.append(A_img)
+            B_images.append(B_img)
+            A_paths.append(A_dir[i])
+            B_paths.append(B_dir[i])
+
+        A_images = self.transform(A_images)
+        B_images = self.transform(B_images)
+        for i in range(self.opt.video_length):
+            A = A_images[i]
+            B = B_images[i]
             if self.opt.which_direction == 'BtoA':
                 input_nc = self.opt.output_nc
                 output_nc = self.opt.input_nc
@@ -57,10 +65,6 @@ class VideoDataset(BaseDataset):
             if output_nc == 1:  # RGB to gray
                 tmp = B[0, ...] * 0.299 + B[1, ...] * 0.587 + B[2, ...] * 0.114
                 B = tmp.unsqueeze(0)
-            A_images.append(A)
-            B_images.append(B)
-            A_paths.append(A_dir[i])
-            B_paths.append(B_dir[i])
 
         return {'A': torch.stack(A_images, dim=2),
                 'B': torch.stack(B_images, dim=2),
