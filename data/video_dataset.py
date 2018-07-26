@@ -62,7 +62,8 @@ class VideoDataset(BaseDataset):
             A_paths.append(A_dir[i])
             B_paths.append(B_dir[i])
 
-        return {'A': torch.stack(A_images), 'B': torch.stack(B_images),
+        return {'A': torch.stack(A_images, dim=2),
+                'B': torch.stack(B_images, dim=2),
                 'A_paths': A_paths, 'B_paths': B_paths}
 
     def __len__(self):
