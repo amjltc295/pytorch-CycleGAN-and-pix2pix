@@ -2,9 +2,11 @@ import numpy as np
 import os
 import ntpath
 import time
+
+from scipy.misc import imresize
+
 from . import util
 from . import html
-from scipy.misc import imresize
 
 
 # save image to the disk
@@ -45,7 +47,7 @@ class Visualizer():
             import visdom
             self.ncols = opt.display_ncols
             self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port, raise_exceptions=True)
-            
+
         if self.use_html:
             self.web_dir = os.path.join(opt.checkpoints_dir, opt.name, 'web')
             self.img_dir = os.path.join(self.web_dir, 'images')
@@ -59,7 +61,7 @@ class Visualizer():
     def reset(self):
         self.saved = False
 
-    def throw_visdom_connection_error(self): 
+    def throw_visdom_connection_error(self):
         print('\n\nCould not connect to Visdom server (https://github.com/facebookresearch/visdom) for displaying training progress.\nYou can suppress connection to Visdom using the option --display_id -1. To install visdom, run \n$ pip install visdom\n, and start the server by \n$ python -m visdom.server.\n\n')
         exit(1)
 
@@ -80,9 +82,12 @@ class Visualizer():
                 images = []
                 idx = 0
                 for label, image in visuals.items():
-                    image_numpy = util.tensor2im(image)
-                    label_html_row += '<td>%s</td>' % label
+                    if '3D' in self.opt.model:
+                        image_numpy = util.tensor5D2im(image)
+                    else:
+                        image_numpy = util.tensor2im(image)
                     images.append(image_numpy.transpose([2, 0, 1]))
+                    label_html_row += '<td>%s</td>' % label
                     idx += 1
                     if idx % ncols == 0:
                         label_html += '<tr>%s</tr>' % label_html_row
@@ -107,7 +112,10 @@ class Visualizer():
             else:
                 idx = 1
                 for label, image in visuals.items():
-                    image_numpy = util.tensor2im(image)
+                    if '3D' in self.opt.model:
+                        image_numpy = util.tensor5D2im(image)
+                    else:
+                        image_numpy = util.tensor2im(image)
                     self.vis.image(image_numpy.transpose([2, 0, 1]), opts=dict(title=label),
                                    win=self.display_id + idx)
                     idx += 1
@@ -115,7 +123,10 @@ class Visualizer():
         if self.use_html and (save_result or not self.saved):  # save images to a html file
             self.saved = True
             for label, image in visuals.items():
-                image_numpy = util.tensor2im(image)
+                if '3D' in self.opt.model:
+                    image_numpy = util.tensor5D2im(image)
+                else:
+                    image_numpy = util.tensor2im(image)
                 img_path = os.path.join(self.img_dir, 'epoch%.3d_%s.png' % (epoch, label))
                 util.save_image(image_numpy, img_path)
             # update website
@@ -125,7 +136,10 @@ class Visualizer():
                 ims, txts, links = [], [], []
 
                 for label, image_numpy in visuals.items():
-                    image_numpy = util.tensor2im(image)
+                    if '3D' in self.opt.model:
+                        image_numpy = util.tensor5D2im(image)
+                    else:
+                        image_numpy = util.tensor2im(image)
                     img_path = 'epoch%.3d_%s.png' % (n, label)
                     ims.append(img_path)
                     txts.append(label)
