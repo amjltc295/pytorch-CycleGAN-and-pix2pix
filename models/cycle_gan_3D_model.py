@@ -5,7 +5,7 @@ from .base_model import BaseModel
 from . import networks
 
 
-class CycleGANModel(BaseModel):
+class CycleGAN3DModel(BaseModel):
     def name(self):
         return 'CycleGANModel'
 
