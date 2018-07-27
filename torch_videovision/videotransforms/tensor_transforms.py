@@ -1,6 +1,6 @@
 import random
 
-from videotransforms.utils import functional as F
+# from .utils import functional as F
 
 
 class Normalize(object):
@@ -27,7 +27,11 @@ class Normalize(object):
         Returns:
             Tensor: Normalized stack of image of image
         """
-        return F.normalize(tensor, self.mean, self.std)
+        for t, m, s in zip(tensor, self.mean, self.std):
+            t.sub_(m).div_(s)
+        return tensor
+
+        # return F.normalize(tensor, self.mean, self.std)
 
 
 class SpatialRandomCrop(object):
