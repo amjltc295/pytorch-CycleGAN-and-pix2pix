@@ -42,8 +42,8 @@ class VideoDataset(BaseDataset):
         As = []
         Bs = []
         for i in range(self.opt.video_length):
-            A_img = Image.open(A_dir[i]).convert('RGB')
-            B_img = Image.open(B_dir[i]).convert('RGB')
+            A_img = Image.open(A_dir[i*3]).convert('RGB')
+            B_img = Image.open(B_dir[i*3]).convert('RGB')
             A_images.append(A_img)
             B_images.append(B_img)
             A_paths.append(A_dir[i])
