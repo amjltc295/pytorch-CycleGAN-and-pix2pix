@@ -70,8 +70,8 @@ class VideoDataset(BaseDataset):
             As.append(A)
             Bs.append(B)
 
-        return {'A': torch.stack(As, dim=2),
-                'B': torch.stack(Bs, dim=2),
+        return {'A': torch.stack(As, dim=1),
+                'B': torch.stack(Bs, dim=1),
                 'A_paths': A_paths, 'B_paths': B_paths}
 
     def __len__(self):
