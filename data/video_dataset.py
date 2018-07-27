@@ -39,6 +39,8 @@ class VideoDataset(BaseDataset):
         B_images = []
         A_paths = []
         B_paths = []
+        As = []
+        Bs = []
         for i in range(self.opt.video_length):
             A_img = Image.open(A_dir[i]).convert('RGB')
             B_img = Image.open(B_dir[i]).convert('RGB')
@@ -50,8 +52,8 @@ class VideoDataset(BaseDataset):
         A_images = self.transform(A_images)
         B_images = self.transform(B_images)
         for i in range(self.opt.video_length):
-            A = A_images[i]
-            B = B_images[i]
+            A = A_images[:, i, :, :]
+            B = B_images[:, i, :, :]
             if self.opt.which_direction == 'BtoA':
                 input_nc = self.opt.output_nc
                 output_nc = self.opt.input_nc
@@ -65,9 +67,11 @@ class VideoDataset(BaseDataset):
             if output_nc == 1:  # RGB to gray
                 tmp = B[0, ...] * 0.299 + B[1, ...] * 0.587 + B[2, ...] * 0.114
                 B = tmp.unsqueeze(0)
+            As.append(A)
+            Bs.append(B)
 
-        return {'A': torch.stack(A_images, dim=2),
-                'B': torch.stack(B_images, dim=2),
+        return {'A': torch.stack(As, dim=2),
+                'B': torch.stack(Bs, dim=2),
                 'A_paths': A_paths, 'B_paths': B_paths}
 
     def __len__(self):

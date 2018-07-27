@@ -2,6 +2,8 @@ import torch.utils.data as data
 from PIL import Image
 import torchvision.transforms as transforms
 import torch_videovision.videotransforms.video_transforms as vtransforms
+import torch_videovision.videotransforms.volume_transforms as votransforms
+import torch_videovision.videotransforms.tensor_transforms as tetransforms
 
 
 class BaseDataset(data.Dataset):
@@ -46,9 +48,9 @@ def get_video_transform(opt):
     if opt.isTrain and not opt.no_flip:
         transform_list.append(vtransforms.RandomHorizontalFlip())
 
-    transform_list += [vtransforms.ToTensor(),
-                       vtransforms.Normalize((0.5, 0.5, 0.5),
-                                             (0.5, 0.5, 0.5))]
+    transform_list += [votransforms.ClipToTensor(),
+                       tetransforms.Normalize((0.5, 0.5, 0.5),
+                                              (0.5, 0.5, 0.5))]
     return vtransforms.Compose(transform_list)
 
 
