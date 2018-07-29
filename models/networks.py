@@ -429,8 +429,7 @@ class NLayer3DDiscriminator(nn.Module):
             nn.Conv3d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
             nn.LeakyReLU(0.2, True)
         ]
-
-        """
+        kw = 2
         nf_mult = 1
         nf_mult_prev = 1
         for n in range(1, n_layers):
@@ -456,7 +455,6 @@ class NLayer3DDiscriminator(nn.Module):
 
         if use_sigmoid:
             sequence += [nn.Sigmoid()]
-        """
 
         self.model = nn.Sequential(*sequence)
 
